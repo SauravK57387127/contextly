@@ -1,4 +1,4 @@
-
+import "dotenv/config";
 
 function required(key: string): string {
   const value = process.env[key];
@@ -7,8 +7,8 @@ function required(key: string): string {
 }
 
 export const config = {
-  env: process.env.NODE_ENV ?? "development";
-  port: Number(process.env.PORT ?? 4000);
+  env: process.env.NODE_ENV ?? "development",
+  port: Number(process.env.PORT ?? 4000),
   db: { connectionString: required("DATABASE_URL") },
   auth: { jwtSecret: required("JWT_SECRET") },
 };
