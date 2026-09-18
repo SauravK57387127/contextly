@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import { config } from "./config";
 import { contextMiddleware } from "./shared/context";
 import { errorHandler } from "./middlewares/errorHandler";
 import { NotFoundError } from "./shared/errors";
@@ -11,7 +13,8 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors());
+app.use(cors({ origin: config.frontendUrl, credentials: true }));
+app.use(cookieParser());
   app.use(contextMiddleware);
   app.use(express.json({ limit: "1mb" }));
 

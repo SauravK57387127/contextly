@@ -6,6 +6,14 @@ interface UploadedFile {
   path: string;
 }
 
+export async function listDocuments(ownerId: string) {
+  const result = await pool.query(
+    "SELECT id, filename, status, created_at FROM documents WHERE owner_id = $1 ORDER BY created_at DESC",
+    [ownerId]
+  );
+  return result.rows;
+}
+
 export async function saveDocument(ownerId: string, file: UploadedFile){
   const result = await pool.query(
     `INSERT INTO documents (owner_id, filename, storage_path, status)

@@ -11,4 +11,5 @@ export const config = {
   port: Number(process.env.PORT ?? 4000),
   db: { connectionString: required("DATABASE_URL") },
   auth: { jwtSecret: required("JWT_SECRET") },
+frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
 };

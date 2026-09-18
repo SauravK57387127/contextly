@@ -3,6 +3,12 @@ import { getContext } from "../../shared/context";
 import { ValidationError } from "../../shared/errors";
 import * as documentsService from "./documents.service";
 
+export const list = asyncHandler(async (req, res) => {
+  const { userId } = getContext();
+  const documents = await documentsService.listDocuments(userId!);
+  res.json({ success: true, data: documents });
+});
+
 export const upload = asyncHandler(async (req, res) => {
   if (!req.file) throw new ValidationError("A file is required");
 

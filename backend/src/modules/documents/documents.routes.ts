@@ -11,6 +11,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const router = Router();
+router.get("/", requireAuth, documentsController.list);
+
 router.post("/", requireAuth, upload.single("file"), documentsController.upload);
 
 export default router;
