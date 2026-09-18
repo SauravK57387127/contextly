@@ -16,3 +16,9 @@ export const upload = asyncHandler(async (req, res) => {
   const document = await documentsService.saveDocument(userId!, req.file);
   res.status(201).json({ success: true, data: document });
 });
+
+export const remove = asyncHandler(async (req, res) => {
+  const { userId } = getContext();
+  await documentsService.deleteDocument(req.params.id, userId!);
+  res.status(200).json({ success: true, data: null });
+});

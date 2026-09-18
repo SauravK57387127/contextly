@@ -14,5 +14,6 @@ const router = Router();
 router.get("/", requireAuth, documentsController.list);
 
 router.post("/", requireAuth, upload.single("file"), documentsController.upload);
+router.delete("/:id", requireAuth, documentsController.remove);
 
 export default router;

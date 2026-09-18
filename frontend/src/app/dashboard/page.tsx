@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
 
 const { user, isLoading, logout } = useAuth();
@@ -49,6 +50,19 @@ useEffect(() => {
     }
   }
 
+  async function handleDelete(id: string) {
+  setDeletingId(id);
+  setError(null);
+  try {
+    await apiClient(`/documents/${id}`, { method: "DELETE" });
+    setDocuments((docs) => docs.filter((doc) => doc.id !== id));
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Delete failed");
+  } finally {
+    setDeletingId(null);
+  }
+}
+
 async function handleLogout() {
   await logout();
   router.push("/login");
@@ -75,10 +89,19 @@ async function handleLogout() {
         ) : (
           <ul className="space-y-2">
             {documents.map((doc) => (
-              <li key={doc.id} className="flex items-center justify-between rounded-md border border-neutral-200 bg-white px-4 py-3">
-                <span className="text-sm text-neutral-800">{doc.filename}</span>
-                <span className="text-xs uppercase tracking-wide text-neutral-400">{doc.status}</span>
-              </li>
+             <li key={doc.id} className="flex items-center justify-between rounded-md border border-neutral-200 bg-white px-4 py-3">
+  <span className="text-sm text-neutral-800">{doc.filename}</span>
+  <div className="flex items-center gap-3">
+    <span className="text-xs uppercase tracking-wide text-neutral-400">{doc.status}</span>
+    <button
+      onClick={() => handleDelete(doc.id)}
+      disabled={deletingId === doc.id}
+      className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
+    >
+      {deletingId === doc.id ? "Deleting..." : "Delete"}
+    </button>
+  </div>
+</li>
             ))}
           </ul>
         )}

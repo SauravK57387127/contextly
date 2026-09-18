@@ -1,4 +1,5 @@
-
+import fs from "fs/promises";
+import { NotFoundError } from "../../shared/errors";
 import { pool } from "../../infrastructure/database/pool";
 
 interface UploadedFile {
@@ -22,4 +23,22 @@ export async function saveDocument(ownerId: string, file: UploadedFile){
     [ownerId, file.originalname, file.path]
   );
   return result.rows[0];
+}
+
+export async function deleteDocument(documentId: string, ownerId: string) {
+  const result = await pool.query(
+    "DELETE FROM documents WHERE id = $1 AND owner_id = $2 RETURNING storage_path",
+    [documentId, ownerId]
+  );
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError("Document");
+  }
+
+  const { storage_path } = result.rows[0];
+  await fs.unlink(storage_path).catch(() => {
+    // file already gone from disk — DB row is still correctly removed, not fatal
+  });
+
+  return { success: true };
 }
