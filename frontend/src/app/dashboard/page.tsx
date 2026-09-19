@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
 interface Doc { id: string; filename: string; status: string; created_at: string; }
+interface Chat { id: string; title: string; document_id: string; created_at: string; }
 
 export default function DashboardPage() {
   const [documents, setDocuments] = useState<Doc[]>([]);
@@ -12,6 +13,7 @@ export default function DashboardPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 const [deletingId, setDeletingId] = useState<string | null>(null);
+const [chats, setChats] = useState<Chat[]>([]);
   const router = useRouter();
 
 const { user, isLoading, logout } = useAuth();
@@ -25,6 +27,8 @@ useEffect(() => {
     try {
       const res = await apiClient("/documents");
       setDocuments(res.data);
+      const chatsRes = await apiClient("/chats");
+    setChats(chatsRes.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load documents");
     } finally {
@@ -100,11 +104,33 @@ async function handleLogout() {
     >
       {deletingId === doc.id ? "Deleting..." : "Delete"}
     </button>
+<a href={`/chat/new?documentId=${doc.id}&filename=${encodeURIComponent(doc.filename)}`}
+   className="text-xs text-neutral-600 hover:text-neutral-900 underline">
+  Start chat
+</a>
   </div>
 </li>
             ))}
           </ul>
         )}
+
+        <div className="mt-10">
+  <h2 className="mb-3 text-sm font-medium text-neutral-700">Your chats</h2>
+  {chats.length === 0 ? (
+    <p className="text-sm text-neutral-500">No chats yet — start one from a document above.</p>
+  ) : (
+    <ul className="space-y-2">
+      {chats.map((chat) => (
+        <li key={chat.id}>
+          <a href={`/chat/${chat.id}`}
+             className="block rounded-md border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 hover:border-neutral-400">
+            {chat.title}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
       </div>
     </main>
   );

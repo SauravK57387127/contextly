@@ -4,6 +4,10 @@ export function setAccessToken(token: string | null) {
   currentAccessToken = token;
 }
 
+export function getCurrentAccessToken() {
+  return currentAccessToken;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ApiOptions {

@@ -8,6 +8,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 import { NotFoundError } from "./shared/errors";
 import authRoutes from "./modules/auth/auth.routes";
 import documentsRoutes from "./modules/documents/documents.routes";
+import chatsRoutes from "./modules/chats/chats.routes";
 
 export function createApp() {
   const app = express();
@@ -22,6 +23,7 @@ app.use(cookieParser());
 
   app.use("/auth", authRoutes);
   app.use("/documents", documentsRoutes);
+app.use("/chats", chatsRoutes);
 
   app.use((req, res, next) => next(new NotFoundError("Route")));
   app.use(errorHandler);
