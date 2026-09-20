@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import { NotFoundError } from "../../shared/errors";
 import { pool } from "../../infrastructure/database/pool";
+import { extractText, chunkText } from "./documents.processing";
 
 interface UploadedFile {
   originalname: string;
@@ -15,14 +16,40 @@ export async function listDocuments(ownerId: string) {
   return result.rows;
 }
 
-export async function saveDocument(ownerId: string, file: UploadedFile){
+import { extractText, chunkText } from "./documents.processing";
+
+export async function saveDocument(ownerId: string, file: UploadedFile) {
   const result = await pool.query(
     `INSERT INTO documents (owner_id, filename, storage_path, status)
-    VALUES ($1, $2, $3, 'uploaded')
-    RETURNING id, owner_id, filename, storage_path, status, created_at`,
+     VALUES ($1, $2, $3, 'uploaded')
+     RETURNING id, owner_id, filename, storage_path, status, created_at`,
     [ownerId, file.originalname, file.path]
   );
-  return result.rows[0];
+  const document = result.rows[0];
+
+  try {
+    await pool.query("UPDATE documents SET status = 'processing' WHERE id = $1", [document.id]);
+
+    const text = await extractText(document.storage_path);
+    const chunks = chunkText(text);
+
+    for (let i = 0; i < chunks.length; i++) {
+      await pool.query(
+        "INSERT INTO chunks (document_id, content, chunk_index) VALUES ($1, $2, $3)",
+        [document.id, chunks[i], i]
+      );
+    }
+
+    const updated = await pool.query(
+      `UPDATE documents SET status = 'chunked' WHERE id = $1
+       RETURNING id, owner_id, filename, storage_path, status, created_at`,
+      [document.id]
+    );
+    return updated.rows[0];
+  } catch (err) {
+    await pool.query("UPDATE documents SET status = 'failed' WHERE id = $1", [document.id]);
+    throw err;
+  }
 }
 
 export async function deleteDocument(documentId: string, ownerId: string) {
