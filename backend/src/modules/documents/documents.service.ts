@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import { NotFoundError } from "../../shared/errors";
 import { pool } from "../../infrastructure/database/pool";
 import { extractText, chunkText } from "./documents.processing";
+import { embedChunks } from "./documents.processing";
 
 interface UploadedFile {
   originalname: string;
@@ -39,6 +40,8 @@ export async function saveDocument(ownerId: string, file: UploadedFile) {
         [document.id, chunks[i], i]
       );
     }
+
+    await embedChunks(document.id);
 
     const updated = await pool.query(
       `UPDATE documents SET status = 'chunked' WHERE id = $1

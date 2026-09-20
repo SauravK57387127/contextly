@@ -1,5 +1,22 @@
 import fs from "fs/promises";
 import { PDFParse } from "pdf-parse";
+import { getEmbedding } from "../../infrastructure/embeddings";
+import { pool } from "../../infrastructure/database/pool";
+
+export async function embedChunks(documentId: string) {
+  const result = await pool.query(
+    "SELECT id, content FROM chunks WHERE document_id = $1",
+    [documentId]
+  );
+
+  for (const chunk of result.rows) {
+    const vector = await getEmbedding(chunk.content);
+    await pool.query(
+      "UPDATE chunks SET embedding = $1 WHERE id = $2",
+      [JSON.stringify(vector), chunk.id]
+    );
+  }
+}
 
 export async function extractText(filePath: string): Promise<string> {
   const buffer = await fs.readFile(filePath);
