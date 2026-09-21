@@ -44,7 +44,7 @@ export async function saveDocument(ownerId: string, file: UploadedFile) {
     await embedChunks(document.id);
 
     const updated = await pool.query(
-      `UPDATE documents SET status = 'chunked' WHERE id = $1
+      `UPDATE documents SET status = 'ready' WHERE id = $1
        RETURNING id, owner_id, filename, storage_path, status, created_at`,
       [document.id]
     );

@@ -4,32 +4,38 @@ import { createChatSchema } from "./chats.schema";
 import * as chatsService from "./chats.service";
 import { asyncHandler } from "../../middlewares/errorHandler";
 import { getContext } from "../../shared/context";
-
-const STUB_ANSWER = "This is a placeholder answer. Real retrieval and generation arrive in a later phase.";
+import { retrieveRelevantChunks } from "./retrieval";
+import { buildPrompt, streamAnswer } from "../../infrastructure/generation";
 
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { content } = req.body; // validation kept minimal here deliberately — real shape lands with real logic in Phase 7
+  const { content } = req.body;
   const { userId } = getContext();
 
-  // Confirm ownership before doing anything else
-  const chatCheck = await pool.query("SELECT id FROM chats WHERE id = $1 AND owner_id = $2", [req.params.id, userId]);
-  if (chatCheck.rows.length === 0) throw new NotFoundError("Chat");
+  const chatResult = await pool.query(
+    "SELECT id, document_id FROM chats WHERE id = $1 AND owner_id = $2",
+    [req.params.id, userId]
+  );
+  const chat = chatResult.rows[0];
+  if (!chat) throw new NotFoundError("Chat");
 
   await pool.query("INSERT INTO messages (chat_id, role, content) VALUES ($1, 'user', $2)", [req.params.id, content]);
+
+  const chunks = await retrieveRelevantChunks(content, chat.document_id);
+  const prompt = buildPrompt(chunks, content);
 
   res.setHeader("Content-Type", "text/plain");
   res.setHeader("Transfer-Encoding", "chunked");
 
-  const words = STUB_ANSWER.split(" ");
   let fullAnswer = "";
-
-  for (const word of words) {
-    fullAnswer += word + " ";
-    res.write(word + " ");
-    await new Promise((resolve) => setTimeout(resolve, 80));
+  try {
+    fullAnswer = await streamAnswer(prompt, (chunk) => res.write(chunk));
+  } catch {
+    res.write("\n\n[Something went wrong generating a response. Please try again.]");
   }
 
-  await pool.query("INSERT INTO messages (chat_id, role, content) VALUES ($1, 'assistant', $2)", [req.params.id, fullAnswer.trim()]);
+  if (fullAnswer) {
+    await pool.query("INSERT INTO messages (chat_id, role, content) VALUES ($1, 'assistant', $2)", [req.params.id, fullAnswer.trim()]);
+  }
 
   res.end();
 });
