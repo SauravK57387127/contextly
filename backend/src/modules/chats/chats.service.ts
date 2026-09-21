@@ -27,7 +27,7 @@ export async function getChatWithMessages(chatId: string, ownerId: string) {
   if (!chat) throw new NotFoundError("Chat");
 
   const messagesResult = await pool.query(
-    `SELECT id, role, content, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC`,
+    `SELECT id, role, content, sources, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC`,
     [chatId]
   );
 

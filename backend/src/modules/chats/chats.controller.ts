@@ -21,24 +21,45 @@ export const sendMessage = asyncHandler(async (req, res) => {
   await pool.query("INSERT INTO messages (chat_id, role, content) VALUES ($1, 'user', $2)", [req.params.id, content]);
 
   const chunks = await retrieveRelevantChunks(content, chat.document_id);
-  const prompt = buildPrompt(chunks, content);
 
   res.setHeader("Content-Type", "text/plain");
   res.setHeader("Transfer-Encoding", "chunked");
+
+  // No relevant content at all — don't call Gemini with empty context, just say so
+  if (chunks.length === 0) {
+    const message = "I couldn't find anything relevant to that question in this document.";
+    res.write(message);
+    await pool.query(
+      "INSERT INTO messages (chat_id, role, content, sources) VALUES ($1, 'assistant', $2, $3)",
+      [req.params.id, message, JSON.stringify([])]
+    );
+    return res.end();
+  }
+
+  const sources = chunks.map((c) => ({ chunk_index: c.chunk_index, snippet: c.content.slice(0, 100) }));
+  res.write(`__SOURCES__${JSON.stringify(sources)}__END_SOURCES__\n`);
+
+  const prompt = buildPrompt(chunks, content);
 
   let fullAnswer = "";
   try {
     fullAnswer = await streamAnswer(prompt, (chunk) => res.write(chunk));
   } catch {
-    res.write("\n\n[Something went wrong generating a response. Please try again.]");
+    const message = "\n\n[Something went wrong generating a response. Please try again.]";
+    res.write(message);
+    fullAnswer = message;
   }
 
   if (fullAnswer) {
-    await pool.query("INSERT INTO messages (chat_id, role, content) VALUES ($1, 'assistant', $2)", [req.params.id, fullAnswer.trim()]);
+    await pool.query(
+      "INSERT INTO messages (chat_id, role, content, sources) VALUES ($1, 'assistant', $2, $3)",
+      [req.params.id, fullAnswer.trim(), JSON.stringify(sources)]
+    );
   }
 
   res.end();
 });
+
 
 function parseCreateBody(body: unknown) {
   const result = createChatSchema.safeParse(body);

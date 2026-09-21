@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import ReactMarkdown from "react-markdown";
 
-interface Message { id: string; role: "user" | "assistant"; content: string; }
+
+interface Message { id: string; role: "user" | "assistant"; content: string; sources?: { chunk_index: number; snippet: string }[]; }
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,14 +70,31 @@ export default function ChatPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m))
-        );
-      }
+     let sourcesParsed = false;
+let leftover = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  let chunk = leftover + decoder.decode(value);
+  leftover = "";
+
+  if (!sourcesParsed) {
+    const match = chunk.match(/^__SOURCES__(.*?)__END_SOURCES__\n/s);
+    if (match) {
+      const sources = JSON.parse(match[1]);
+      setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, sources } : m)));
+      chunk = chunk.slice(match[0].length);
+      sourcesParsed = true;
+    } else {
+      leftover = chunk; // sentinel hasn't fully arrived yet, wait for more
+      continue;
+    }
+  }
+
+  setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m)));
+}
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message");
     } finally {
@@ -94,16 +113,30 @@ export default function ChatPage() {
         <h1 className="mt-1 text-lg font-semibold text-neutral-900">{title}</h1>
       </header>
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
-        {messages.map((m) => (
-          <div key={m.id} className={`max-w-lg rounded-lg px-4 py-2 text-sm ${
-            m.role === "user" ? "ml-auto bg-neutral-900 text-white" : "bg-white border border-neutral-200 text-neutral-800"
-          }`}>
-            {m.content || (m.role === "assistant" && sending ? "…" : "")}
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
+     <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6">
+  {messages.map((m) => (
+    <div key={m.id} className={`max-w-lg rounded-lg px-4 py-2 text-sm ${
+      m.role === "user" ? "ml-auto bg-neutral-900 text-white" : "bg-white border border-neutral-200 text-neutral-800"
+    }`}>
+    {m.role === "assistant" ? (
+  <div className="prose prose-sm max-w-none">
+    <ReactMarkdown>{m.content || (sending ? "…" : "")}</ReactMarkdown>
+  </div>
+) : (
+  m.content
+)} 
+
+      {m.role === "assistant" && m.sources && m.sources.length > 0 && (
+        <div className="mt-2 space-y-1 border-t border-neutral-100 pt-2 text-xs text-neutral-400">
+          {m.sources.map((s, i) => (
+            <div key={i}>Excerpt {s.chunk_index + 1}: "{s.snippet}..."</div>
+          ))}
+        </div>
+      )}
+    </div>
+  ))}
+  <div ref={bottomRef} />
+</div>
 
       {error && <p className="px-6 text-sm text-red-600">{error}</p>}
 
