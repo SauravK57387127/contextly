@@ -5,27 +5,42 @@ import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
 export default function NewChatPage() {
-  const router = useRouter();
-  const params = useSearchParams();
-  const { user, isLoading: authLoading } = useAuth();
-  const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+    const params = useSearchParams();
+    const { user, isLoading: authLoading } = useAuth();
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (authLoading) return;           // ← wait for readiness, don't guess
-    if (!user) { router.push("/login"); return; }
+    useEffect(() => {
+        if (authLoading) return; // ← wait for readiness, don't guess
+        if (!user) {
+            router.push("/login");
+            return;
+        }
 
-    const documentId = params.get("documentId");
-    const filename = params.get("filename") ?? "New chat";
-    if (!documentId) { setError("No document selected"); return; }
+        const documentId = params.get("documentId");
+        const filename = params.get("filename") ?? "New chat";
+        if (!documentId) {
+            setError("No document selected");
+            return;
+        }
 
-    apiClient("/chats", { method: "POST", body: { document_id: documentId, title: filename } })
-      .then((res) => router.replace(`/chat/${res.data.id}`))
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not start chat"));
-  }, [authLoading, user, params, router]);
+        apiClient("/chats", {
+            method: "POST",
+            body: { document_id: documentId, title: filename },
+        })
+            .then((res) => router.replace(`/chat/${res.data.id}`))
+            .catch((err) =>
+                setError(
+                    err instanceof Error ? err.message : "Could not start chat",
+                ),
+            );
+    }, [authLoading, user, params, router]);
 
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50">
-      <p className="text-sm text-neutral-500">{error ?? "Starting chat..."}</p>
-    </main>
-  );
+    return (
+        <main className="flex min-h-screen items-center justify-center bg-neutral-50">
+            <p className="text-sm text-neutral-500">
+                {error ?? "Starting chat..."}
+            </p>
+        </main>
+    );
 }

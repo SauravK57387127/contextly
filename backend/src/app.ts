@@ -5,28 +5,29 @@ import cookieParser from "cookie-parser";
 import { config } from "./config";
 import { contextMiddleware } from "./shared/context";
 import { errorHandler } from "./middlewares/errorHandler";
+import { authLimiter } from "./middlewares/rateLimit";
 import { NotFoundError } from "./shared/errors";
 import authRoutes from "./modules/auth/auth.routes";
 import documentsRoutes from "./modules/documents/documents.routes";
 import chatsRoutes from "./modules/chats/chats.routes";
 
 export function createApp() {
-  const app = express();
+    const app = express();
 
-  app.use(helmet());
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
-app.use(cookieParser());
-  app.use(contextMiddleware);
-  app.use(express.json({ limit: "1mb" }));
+    app.use(helmet());
+    app.use(cors({ origin: config.frontendUrl, credentials: true }));
+    app.use(cookieParser());
+    app.use(contextMiddleware);
+    app.use(express.json({ limit: "1mb" }));
 
-  app.get("/health", (req, res) => res.json({ status: "ok" })); // before auth, always
+    app.get("/health", (req, res) => res.json({ status: "ok" })); // before auth, always
 
-  app.use("/auth", authRoutes);
-  app.use("/documents", documentsRoutes);
-app.use("/chats", chatsRoutes);
+    app.use("/auth", authLimiter, authRoutes);
+    app.use("/documents", documentsRoutes);
+    app.use("/chats", chatsRoutes);
 
-  app.use((req, res, next) => next(new NotFoundError("Route")));
-  app.use(errorHandler);
+    app.use((req, res, next) => next(new NotFoundError("Route")));
+    app.use(errorHandler);
 
-  return app;
+    return app;
 }
