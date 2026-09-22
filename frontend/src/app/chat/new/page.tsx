@@ -1,17 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
-export default function NewChatPage() {
+function NewChatContent() {
     const router = useRouter();
     const params = useSearchParams();
     const { user, isLoading: authLoading } = useAuth();
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (authLoading) return; // ← wait for readiness, don't guess
+        if (authLoading) return;
         if (!user) {
             router.push("/login");
             return;
@@ -19,6 +20,7 @@ export default function NewChatPage() {
 
         const documentId = params.get("documentId");
         const filename = params.get("filename") ?? "New chat";
+
         if (!documentId) {
             setError("No document selected");
             return;
@@ -42,5 +44,13 @@ export default function NewChatPage() {
                 {error ?? "Starting chat..."}
             </p>
         </main>
+    );
+}
+
+export default function NewChatPage() {
+    return (
+        <Suspense fallback={<p>Starting chat...</p>}>
+            <NewChatContent />
+        </Suspense>
     );
 }
