@@ -1,8 +1,7 @@
 import fs from "fs/promises";
 import { NotFoundError } from "../../shared/errors";
 import { pool } from "../../infrastructure/database/pool";
-import { extractText, chunkText } from "./documents.processing";
-import { embedChunks } from "./documents.processing";
+import { extractText, chunkText, embedChunks } from "./documents.processing";
 
 interface UploadedFile {
     originalname: string;
@@ -16,8 +15,6 @@ export async function listDocuments(ownerId: string) {
     );
     return result.rows;
 }
-
-import { extractText, chunkText } from "./documents.processing";
 
 export async function saveDocument(ownerId: string, file: UploadedFile) {
     const result = await pool.query(

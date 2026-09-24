@@ -40,7 +40,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
         return res.end();
     }
 
-    const sources = chunks.map((c) => ({
+    const sources = chunks.map((c: { chunk_index: number; content: string }) => ({
         chunk_index: c.chunk_index,
         snippet: c.content.slice(0, 100),
     }));
@@ -96,7 +96,7 @@ export const list = asyncHandler(async (req, res) => {
 export const getOne = asyncHandler(async (req, res) => {
     const { userId } = getContext();
     const result = await chatsService.getChatWithMessages(
-        req.params.id,
+        req.params.id as string,
         userId!,
     );
     res.status(200).json({ success: true, data: result });

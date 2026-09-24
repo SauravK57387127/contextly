@@ -19,6 +19,6 @@ export const upload = asyncHandler(async (req, res) => {
 
 export const remove = asyncHandler(async (req, res) => {
     const { userId } = getContext();
-    await documentsService.deleteDocument(req.params.id, userId!);
+    await documentsService.deleteDocument(req.params.id as string, userId!);
     res.status(200).json({ success: true, data: null });
 });
