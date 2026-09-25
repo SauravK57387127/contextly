@@ -14,7 +14,10 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: { resource_type: "raw", folder: "contextly-uploads" },
+  params: {
+    folder: "contextly-uploads",
+    resource_type: "raw",
+  } as any,
 });
 
 const upload = multer({
