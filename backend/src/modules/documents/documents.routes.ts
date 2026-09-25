@@ -17,6 +17,7 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "contextly-uploads",
     resource_type: "raw",
+    public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, "")}`,
   } as any,
 });
 
