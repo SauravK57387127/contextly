@@ -2,6 +2,11 @@ import "dotenv/config";
 import { createApp } from "./app";
 import { config } from "./config";
 import { pool } from "./infrastructure/database/pool";
+import fs from "fs";
+import path from "path";
+
+const uploadsDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 async function start() {
   try {

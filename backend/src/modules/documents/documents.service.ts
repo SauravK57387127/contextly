@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import { v2 as cloudinary } from "cloudinary";
 import { NotFoundError } from "../../shared/errors";
 import { pool } from "../../infrastructure/database/pool";
 import { extractText, chunkText, embedChunks } from "./documents.processing";
@@ -69,9 +69,10 @@ export async function deleteDocument(documentId: string, ownerId: string) {
     }
 
     const { storage_path } = result.rows[0];
-    await fs.unlink(storage_path).catch(() => {
-        // file already gone from disk — DB row is still correctly removed, not fatal
-    });
+const publicId = storage_path.split("/").slice(-2).join("/").replace(/\.[^/.]+$/, "");
+await cloudinary.uploader.destroy(publicId, { resource_type: "raw" }).catch(() => {
+    // already gone from Cloudinary — DB row is still correctly removed, not fatal
+});
 
     return { success: true };
 }

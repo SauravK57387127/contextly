@@ -1,4 +1,3 @@
-import fs from "fs/promises";
 import { PDFParse } from "pdf-parse";
 import { getEmbedding } from "../../infrastructure/embeddings";
 import { pool } from "../../infrastructure/database/pool";
@@ -18,8 +17,9 @@ export async function embedChunks(documentId: string) {
     }
 }
 
-export async function extractText(filePath: string): Promise<string> {
-    const buffer = await fs.readFile(filePath);
+export async function extractText(fileUrl: string): Promise<string> {
+    const res = await fetch(fileUrl);
+    const buffer = Buffer.from(await res.arrayBuffer());
     const parser = new PDFParse({ data: buffer });
     const result = await parser.getText();
     return result.text;
