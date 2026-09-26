@@ -74,18 +74,19 @@ export default function DashboardPage() {
     }
 
     async function handleDelete(id: string) {
-      if (!confirm("Deleting this document will also delete its chats. Continue?")) return;  
-      setDeletingId(id);
-        setError(null);
-        try {
-            await apiClient(`/documents/${id}`, { method: "DELETE" });
-            setDocuments((docs) => docs.filter((doc) => doc.id !== id));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Delete failed");
-        } finally {
-            setDeletingId(null);
-        }
-    }
+  if (!confirm("Deleting this document will also delete its chats. Continue?")) return;
+  setDeletingId(id);
+  setError(null);
+  try {
+    await apiClient(`/documents/${id}`, { method: "DELETE" });
+    setDocuments((docs) => docs.filter((doc) => doc.id !== id));
+    setChats((prev) => prev.filter((chat) => chat.document_id !== id));   // ← new line
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Delete failed");
+  } finally {
+    setDeletingId(null);
+  }
+}
 
     async function handleLogout() {
         await logout();
