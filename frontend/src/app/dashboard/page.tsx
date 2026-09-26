@@ -74,7 +74,8 @@ export default function DashboardPage() {
     }
 
     async function handleDelete(id: string) {
-        setDeletingId(id);
+      if (!confirm("Deleting this document will also delete its chats. Continue?")) return;  
+      setDeletingId(id);
         setError(null);
         try {
             await apiClient(`/documents/${id}`, { method: "DELETE" });

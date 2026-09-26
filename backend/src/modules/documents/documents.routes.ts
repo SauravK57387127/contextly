@@ -14,11 +14,11 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: {
+  params: (req: Express.Request, file: Express.Multer.File) => ({
     folder: "contextly-uploads",
     resource_type: "raw",
     public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, "")}`,
-  } as any,
+  }) as any,
 });
 
 const upload = multer({
