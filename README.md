@@ -16,18 +16,18 @@ A deliberately scoped, foundational RAG implementation — ingestion, chunking, 
 ## Architecture
 
 ```
-┌──────────┐        ┌──────────────┐        ┌─────────────────────┐
-│ Next.js  │  HTTP   │   Express    │  SQL   │  PostgreSQL          │
-│ Frontend │ ──────▶ │   Backend    │ ─────▶ │  + pgvector          │
-│ (Vercel) │ ◀────── │   (Render)   │ ◀───── │  (Neon)              │
+┌──────────┐         ┌──────────────┐        ┌─────────────────────┐
+│ Next.js  │  HTTP   │   Express    │  SQL   │  PostgreSQL         │
+│ Frontend │ ──────▶ │   Backend    │ ─────▶ │  + pgvector         │
+│ (Vercel) │ ◀────── │   (Render)   │ ◀───── │  (Neon)             │
 └──────────┘ stream  └──────┬───────┘        └─────────────────────┘
                              │
                  ┌───────────┼────────────┐
                  ▼           ▼             ▼
-          ┌───────────┐ ┌──────────┐ ┌───────────┐
-          │ Cloudinary │ │  Gemini  │ │  Gemini   │
-          │  (files)   │ │(embeddings)│(generation)│
-          └───────────┘ └──────────┘ └───────────┘
+          ┌───────────┐ ┌────────────┐ ┌────────────┐
+          │ Cloudinary│ │  Gemini    │ │  Gemini    │
+          │  (files)  │ │(embeddings)│ │(generation)│
+          └───────────┘ └────────────┘ └────────────┘
 ```
 
 **Ingestion:** PDF upload → Cloudinary storage → text extraction → fixed-size chunking with overlap → Gemini embeddings → chunk + vector stored in `pgvector`.
